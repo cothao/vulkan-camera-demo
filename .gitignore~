@@ -1,0 +1,16 @@
+*.ipch
+*.pdb
+*.fbx
+*.obj
+*.gltf
+*.vsidx
+*.hdr
+*.png
+*.jpg
+*.jpeg
+/.vs/
+/.vs
+.vs/
+*.db
+*.VC.db
+/VulkanSDK/
