@@ -85,15 +85,31 @@ struct Vertex
 
 const std::vector<Vertex> vertices = 
 { 
-	{{-0.5f, -0.5f, 1.f}, {1.f, 0.f, 0.f}},
+	{{-0.5f, -0.5f, 0.f}, {1.f, 0.f, 0.f}},
 	{{0.5f, -0.5f, 0.f}, {0.f, 1.f, 0.f}},
 	{{.5f, .5f, 0.f}, {0.f, 0.f, 1.f}},
-	{{-.5f, .5f, 1.f}, {1.f, 1.f, 1.f}},
+	{{-.5f, .5f, 0.f}, {1.f, 1.f, 1.f}},
+	{{.5f, .5f, -1.f}, {1.f, 1.f, 1.f}},
+	{{.5f, -.5f, -1.f}, {1.f, 1.f, 1.f}},
+	{{-.5f, -.5f, -1.f}, {1.f, 1.f, 1.f}},
+	{{-.5f, .5f, -1.f}, {1.f, 1.f, 1.f}},
 };
 
 const std::vector<uint16_t> indices =
 {
-	0, 1,2,2,3,0
+	0,1,2,
+	2,3,0,
+	2,1,4,
+	5,4,1,
+	3,6,0,
+	7,6,3,
+	6,1,0,
+	3,2,4,
+	3,4,7,
+	4,5,6,
+	6,7,4,
+	6,5,1
+
 };
 
 struct SwapChainSupportDetails
@@ -1389,9 +1405,9 @@ private:
 
 		UniformBufferObject ubo{};
 		ubo.model = glm::translate(glm::mat4(1.), glm::vec3(0., 0., 0.));
-		//ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-		ubo.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f), glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f));
-		ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.f);
+		ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+		ubo.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 
 
 		ubo.proj[1][1] *= -1;
