@@ -26,10 +26,14 @@ glm::vec3 cameraPos = glm::vec3(0., 0., 3.);
 glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
 glm::vec3 cameraUp = glm::vec3(0.f, 1.f, 0.f);
 
+bool firstMouse = true;
 float deltaTime = 0.f;
-float lastTime = deltaTime;
+float lastFrame = deltaTime;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+float lastX = WIDTH/2, lastY = HEIGHT/2;
+float yaw = -90.f;
+float pitch = 0.f;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 uint32_t currentFrame = 0;
 
@@ -136,6 +140,38 @@ struct QueueFamilyIndices
 	}
 };
 
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	const float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.f) pitch = 89.f;
+	if (pitch < -89.f) pitch = -89.f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(direction);
+}
+
 VkResult CreateDebugUtilsMessengerEXT(
 	VkInstance instance, 
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
@@ -219,7 +255,9 @@ private:
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 		window = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwSetWindowUserPointer(window, this);
+		glfwSetCursorPosCallback(window, mouseCallback);
 		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
 	}
@@ -1337,11 +1375,11 @@ private:
 			}
 			if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 			{
-				cameraPos += glm::cross(cameraFront, cameraUp) * cameraSpeed;
+				cameraPos -= glm::cross(cameraFront, cameraUp) * cameraSpeed;
 			}
 			if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 			{
-				cameraPos -= glm::cross(cameraFront, cameraUp) * cameraSpeed;
+				cameraPos += glm::cross(cameraFront, cameraUp) * cameraSpeed;
 			}
 			
 			
