@@ -22,6 +22,12 @@
 #include <map>
 #include <array>
 
+glm::vec3 cameraPos = glm::vec3(0., 0., 3.);
+glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
+glm::vec3 cameraUp = glm::vec3(0.f, 1.f, 0.f);
+
+float deltaTime = 0.f;
+float lastTime = deltaTime;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -1315,6 +1321,31 @@ private:
 	{
 		while (!glfwWindowShouldClose(window))
 		{
+			
+			float currentFrame = glfwGetTime();
+			deltaTime = currentFrame - lastFrame;
+			lastFrame = currentFrame;
+			float cameraSpeed = 2.5 * deltaTime;
+
+			if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			{
+				cameraPos += cameraFront * cameraSpeed;
+			}
+			if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			{
+				cameraPos -= cameraFront * cameraSpeed;
+			}
+			if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			{
+				cameraPos += glm::cross(cameraFront, cameraUp) * cameraSpeed;
+			}
+			if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			{
+				cameraPos -= glm::cross(cameraFront, cameraUp) * cameraSpeed;
+			}
+			
+			
+	
 			glfwPollEvents();
 			drawFrame();
 		}
@@ -1405,10 +1436,9 @@ private:
 
 		UniformBufferObject ubo{};
 		ubo.model = glm::translate(glm::mat4(1.), glm::vec3(0., 0., 0.));
-		ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-		ubo.view = glm::lookAt(glm::vec3(2.f, 2.f, 2.f), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
+		//ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+		ubo.view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		ubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
-
 
 		ubo.proj[1][1] *= -1;
 
