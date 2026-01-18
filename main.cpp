@@ -21,6 +21,7 @@
 #include <set>
 #include <map>
 #include <array>
+#include <memory>
 
 glm::vec3 cameraPos = glm::vec3(0., 0., 3.);
 glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
@@ -37,6 +38,7 @@ float pitch = 0.f;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 const int MAX_OBJECTS = 2;
 const int MAX_GRAPHICS_PIPELINES = 2;
+std::vector<glm::vec3> normals{};
 uint32_t currentFrame = 0;
 
 const std::vector<const char*> deviceExtensions =
@@ -55,11 +57,26 @@ const std::vector<const char*> validationLayers =
 	const bool enableValidationLayers = true;
 #endif
 
+struct Entity
+{
+	Entity(glm::vec3 position, glm::vec3 scale)
+		:pos(position), scale(scale)
+	{
+		std::cout << "Entity created!\n";
+	}
+
+	glm::vec3 pos;
+	glm::vec3 scale;
+};
+
+
 struct UniformBufferObject
 {
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
+	alignas(32) glm::mat4 	model;
+	alignas(32) glm::mat4	view;
+	alignas(32) glm::mat4 	proj;
+	alignas(32) glm::vec3 	pos;
+	alignas(32) glm::vec3 	normal;
 };
 
 struct Vertex
@@ -208,6 +225,7 @@ public:
 	void run()
 	{
 		initWindow();
+		//getNormalVectors();
 		initVulkan();
 		mainLoop();
 		cleanup();
@@ -247,6 +265,10 @@ private:
 	std::vector<std::vector<void*>> uniformBuffersMapped;
 	VkDescriptorPool descriptorPool;
 	std::vector<std::vector<VkDescriptorSet>> descriptorSets;
+	std::vector<std::shared_ptr<Entity>> entities{
+		std::shared_ptr<Entity>(new Entity(glm::vec3(1., 0., 1.), glm::vec3(1.))),
+		std::shared_ptr<Entity>(new Entity(glm::vec3(5., 0., 1.), glm::vec3(1.)))
+	};
 	bool framebufferResized = false;
 
 	void initWindow()
@@ -353,10 +375,10 @@ private:
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-			uniformBuffers.resize(MAX_OBJECTS);
-			uniformBuffersMemory.resize(MAX_OBJECTS);
-			uniformBuffersMapped.resize(MAX_OBJECTS);
-		std::cout << "Resizing buffers\n";
+		uniformBuffers.resize(MAX_OBJECTS);
+		uniformBuffersMemory.resize(MAX_OBJECTS);
+		uniformBuffersMapped.resize(MAX_OBJECTS);
+		
 		for (size_t i = 0; i < MAX_OBJECTS; i++)
 		{
 			std::cout << "Buffer " << i << '\n';
@@ -1526,14 +1548,54 @@ private:
 
 	}
 
+	void getNormalVectors()
+	{
+		
+		glm::vec3 normal{};
+
+		std::cout << "Getting normals\n";
+		
+		int id = 1;
+
+		std::for_each(indices.begin(), indices.end(), [&id, &normal](uint32_t index){
+			
+			int vertexOffset = id % 3;
+			int stride = 1;
+			
+			glm::vec3 vertices1 = glm::vec3(vertices[(indices[id - 1] - vertexOffset) * stride].pos);
+			glm::vec3 vertices2 = glm::vec3(vertices[(indices[id] - vertexOffset) * stride].pos);
+			glm::vec3 vertices3 = glm::vec3(vertices[(indices[id + 1] - vertexOffset) * stride].pos);	
+
+			glm::vec3 n1 = glm::vec3(
+				vertices2.x - vertices1.x,
+				vertices2.y - vertices1.y,
+				vertices2.z - vertices1.z
+					);
+
+			glm::vec3 n2 = glm::vec3(
+				vertices3.x - vertices1.x,
+				vertices3.y - vertices1.y,
+				vertices3.z - vertices1.z
+					);
+
+			normal = glm::normalize(glm::cross(n1, n2));
+			normals.push_back(normal);
+			id++;
+
+		});
+
+		std::cout << "Normals created\n";
+	}
+
 	void updateUniformBuffer(uint32_t currentImage)
 	{
+
 		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		entities[1]->pos = glm::vec3(entities[1]->pos.x, entities[1]->pos.y, entities[1]->pos.z);
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-
 
 		//ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -1543,10 +1605,16 @@ private:
 		{
 			UniformBufferObject ubo{};
 
+			if (i == 0) 
+			{
+				ubo.pos = entities[1]->pos;
+				ubo.normal = normals[i];
+			}
+
 			ubo.view = view;
 			ubo.proj = proj;
 			ubo.proj[1][1] *= -1;
-			ubo.model = glm::translate(glm::mat4(1.), glm::vec3(1. + static_cast<float>(10. * i), 0., 0.));
+			ubo.model = glm::translate(glm::mat4(1.), entities[i]->pos);
 			memcpy(uniformBuffersMapped[i][currentImage], &ubo, sizeof(ubo));
 		}
 	}

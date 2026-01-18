@@ -14,5 +14,5 @@ void main()
 
 	float diff = dot(lightDir, normal);
 
-	outColor = vec4(normal, 1.);
+	outColor = vec4(fragColor * diff, 1.);
 }
