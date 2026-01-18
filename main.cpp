@@ -36,6 +36,7 @@ float yaw = -90.f;
 float pitch = 0.f;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 const int MAX_OBJECTS = 2;
+const int MAX_GRAPHICS_PIPELINES = 2;
 uint32_t currentFrame = 0;
 
 const std::vector<const char*> deviceExtensions =
@@ -230,7 +231,7 @@ private:
 	VkRenderPass renderPass;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
+	std::vector<VkPipeline> graphicsPipelines;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	VkCommandPool commandPool;
 	std::vector<VkCommandBuffer> commandBuffers;
@@ -583,9 +584,12 @@ private:
 		renderPassInfo.pClearValues = &clearColor;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
+/*
+		for (int i = 0; i < MAX_GRAPHICS_PIPELINES; i++)
+		{
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines[i]);
+		}
+*/
 		VkBuffer vertexBuffers[] = { vertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 
@@ -610,6 +614,8 @@ private:
 
 		for (size_t i = 0; i < MAX_OBJECTS; i++)
 		{
+			
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines[i]);	
 
 				vkCmdBindDescriptorSets(
 						commandBuffer, 
@@ -761,8 +767,24 @@ private:
 	void createGraphicsPipeline()
 	{
 
-		auto vertShaderCode = readFile("shaders/vert.spv");
-		auto fragShaderCode = readFile("shaders/frag.spv");
+		graphicsPipelines.resize(MAX_GRAPHICS_PIPELINES);
+
+		for (size_t i = 0; i < MAX_GRAPHICS_PIPELINES; i++)
+		{	
+
+		std::stringstream ss;
+		ss << "shaders/vert" << (i + 1) << ".spv";
+		std::string vertPath{ss.str()};
+
+		ss.str(std::string());
+		ss << "shaders/frag" << (i + 1) << ".spv";
+		std::string fragPath{ss.str()};
+
+		std:: cout << "vertex path: " << vertPath << '\n';
+		std:: cout << "frag path: " << fragPath << '\n';
+
+		auto vertShaderCode = readFile(vertPath.c_str());
+		auto fragShaderCode = readFile(fragPath.c_str());
 
 		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -898,14 +920,17 @@ private:
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipelines[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
-
+		
 		//END
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+
+		}
+
 	}
 
 	void createImageViews()
@@ -1560,7 +1585,10 @@ private:
 
 		vkDestroyCommandPool(device, commandPool, nullptr);
 
-		vkDestroyPipeline(device, graphicsPipeline, nullptr);
+		for (int i = 0; i < MAX_GRAPHICS_PIPELINES; i++)
+		{
+			vkDestroyPipeline(device, graphicsPipelines[i], nullptr);
+		}
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 		vkDestroyRenderPass(device, renderPass, nullptr);
 
