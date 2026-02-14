@@ -25,6 +25,7 @@
 glm::vec3 cameraPos = glm::vec3(0., 0., 3.);
 glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
 glm::vec3 cameraUp = glm::vec3(0.f, 1.f, 0.f);
+std::vector<glm::vec3> normals = {};
 
 bool firstMouse = true;
 float deltaTime = 0.f;
@@ -105,6 +106,50 @@ const std::vector<Vertex> vertices =
 	{{.5f, -.5f, -1.f}, {1.f, 1.f, 1.f}},
 	{{-.5f, -.5f, -1.f}, {1.f, 1.f, 1.f}},
 	{{-.5f, .5f, -1.f}, {1.f, 1.f, 1.f}},
+};
+
+float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
 
 const std::vector<uint16_t> indices =
@@ -285,6 +330,45 @@ private:
 		createDescriptorSets();
 		createCommandBuffers();
 		createSyncObjects();
+	}
+// TODO: come back to this one day
+	void getNormalVectors()
+	{
+		
+		glm::vec3 normal{};
+
+		int id = 1;
+
+		std::for_each(indices.begin(), indices.end(), [&id, &normal](uint32_t index){
+			
+			int vertexOffset = id % 3;
+			int stride = 1;
+			
+			std::cout << "indices: " << vertices[(indices[id - 1] - vertexOffset) * stride].pos.x << '\n';
+
+			glm::vec3 vertices1 = glm::vec3(vertices[(indices[id - 1] - vertexOffset) * stride].pos);
+			glm::vec3 vertices2 = glm::vec3(vertices[(indices[id] - vertexOffset) * stride].pos);
+			glm::vec3 vertices3 = glm::vec3(vertices[(indices[id + 1] - vertexOffset) * stride].pos);	
+
+			glm::vec3 n1 = glm::vec3(
+				vertices2.x - vertices1.x,
+				vertices2.y - vertices1.y,
+				vertices2.z - vertices1.z
+					);
+
+			glm::vec3 n2 = glm::vec3(
+				vertices3.x - vertices1.x,
+				vertices3.y - vertices1.y,
+				vertices3.z - vertices1.z
+					);
+
+			normal = glm::normalize(glm::cross(n1, n2));
+			normals.push_back(normal);
+			id++;
+			std::cout << "normal for id " << id << ": " << normal.x << ',' << normal.y << ',' << normal.z << '\n';
+		});
+
+		std::cout << "Normals created for vertices: \n";
 	}
 
 	void createDescriptorSets()
@@ -584,12 +668,12 @@ private:
 		renderPassInfo.pClearValues = &clearColor;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+/*
 		for (int i = 0; i < MAX_GRAPHICS_PIPELINES; i++)
 		{
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines[i]);
 		}
-
+*/
 		VkBuffer vertexBuffers[] = { vertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 
@@ -614,6 +698,8 @@ private:
 
 		for (size_t i = 0; i < MAX_OBJECTS; i++)
 		{
+			
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines[i]);	
 
 				vkCmdBindDescriptorSets(
 						commandBuffer, 
